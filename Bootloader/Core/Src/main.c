@@ -103,6 +103,30 @@ void bootApp(void)
 
 
 }
+
+void lockFlashForBootloader()
+{
+	// get current config
+	FLASH_OBProgramInitTypeDef optionBytesFlash  ={0};
+	HAL_FLASHEx_OBGetConfig(&optionBytesFlash);
+
+
+	if((optionBytesFlash.WRPSector & OB_WRP_SECTOR_0) == OB_WRP_SECTOR_0)
+	{
+		HAL_FLASH_Unlock();
+		HAL_FLASH_OB_Unlock();
+		optionBytesFlash.OptionType = OPTIONBYTE_WRP;
+		optionBytesFlash.WRPSector = OB_WRP_SECTOR_0;
+		optionBytesFlash.WRPState = OB_WRPSTATE_ENABLE;
+		HAL_FLASHEx_OBProgram(&optionBytesFlash);
+		HAL_FLASH_OB_Launch();
+		HAL_FLASH_OB_Lock();
+		HAL_FLASH_Lock();
+
+	}
+
+}
+
 void checkIfUpIsThere(void)
 {
 	uint32_t jumpaddr = (pApplicationInfo->JUMP_ADDR);
@@ -144,6 +168,7 @@ int main(void)
 	 SystemClock_Config();
 	  MX_GPIO_Init();
 	  MX_USART2_UART_Init();
+	  lockFlashForBootloader();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
